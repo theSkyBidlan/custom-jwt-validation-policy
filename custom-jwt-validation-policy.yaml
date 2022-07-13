@@ -1,0 +1,352 @@
+id: Custom Jwt Validation Policy
+name: Custom Jwt Validation Policy
+description: Policy to verify jwt from two OuthProviders.
+category: Custom
+type: custom
+resourceLevelSupported: true
+encryptionSupported: true
+violationCategory: true
+standalone: true
+requiredCharacteristics: []
+providedCharacteristics: 
+  - JWT Validation
+configuration:
+  - propertyName : jwtOrigin
+    name: JWT origin
+    description: Origin of the JWT.
+    options:
+      - name: HTTP Bearer Authenticatin Header
+        value: httpBearerAuthenticationHeader
+      - name: Custom Expression
+        value: customExpression
+    type: radio
+    defaultValue: httpBearerAuthenticationHeader
+    optional: false
+    sesnsitive: false
+    allowMultiple: false
+    
+  - propertyName : jwtExpression
+    name: Token Expression
+    description: Mule Expression to be used to extract the JWT from API requests
+    type: expression
+    defaultValue: "#[attributes.headers['jwt']]"
+    optional: false
+    sesnsitive: false
+    allowMultiple: false
+    dependsOnKey: jwtOrigin
+    dependsOnValue: customExpression
+    dependsOnUnfulfilledDefaultValue: "#[attributes.headers['jwt']]"
+    
+  - propertyName : jwtCondition1
+    name: JWT Condition-1
+    description: |
+     Specifies the condition to check JWT against JWKS URl-1. 
+     If this condition evaluates to false then JWT will be checked against JWKS URl-2.
+    type: expression
+    defaultValue: "#[attributes.headers.userRole == 'Admin']"
+    optional: false
+    sesnsitive: false
+    allowMultiple: false
+    dependsOnUnfulfilledDefaultValue: "#[attributes.headers.userRole == 'Admin']"
+    
+  - propertyName : signingMethod1
+    name: JWT Signing Method-1
+    description: Specifies the method to be used by the policy to decode the JWT.
+    options:
+    - name: RSA
+      value: rsa1
+    - name: HMAC
+      value: hmac1
+    - name: None
+      value: none1
+    type: radio
+    defaultValue: rsa1
+    optional: false
+    sesnsitive: false
+    allowMultiple: false
+    
+          
+  - propertyName : signingKeyLength1
+    name: JWT Signing Key Length-1
+    description: |
+     Specifies the length of the key to be in the signing method for HMAC, or the SHa algotithm used for RSA.
+     Ignore this filed if the JWT Signing Method was set to None.
+    options:
+    - name: 256
+      value: 256
+    - name: 384
+      value: 384
+    - name: 512
+      value: 512
+    type: radio
+    defaultValue: 256
+    optional: false
+    sesnsitive: false
+    allowMultiple: false
+
+  - propertyName : jwtKeyOrigin1
+    name: JWT Key Origin-1
+    description: |
+     Origin of the First JWT Key.
+     The JWKS option is only supported if the JWT Signing Method was set to RSA.
+     Ignore this filed if the JWT Signing Method was set to None.
+    options:
+    - name: Text1
+      value: text1
+    - name: JWKS1
+      value: jwks1
+    type: radio
+    defaultValue: text1
+    optional: false
+    sesnsitive: false
+    allowMultiple: false  
+
+  - propertyName: textKey1
+    description: |
+       The shared secret in case the JWT Signing Method-1 is set to HMAC.
+       Include the public PEM key without -----BEGIN PUBLIC KEY----- and -----END PUBLIC KEY----- for RSA signing.
+       Ignore this field if the JWT Signing Method was set to None.
+    name: JWT Key-1
+    type: string
+    sensitive: true
+    optional: false
+    defaultValue: your-(256|384|512)-bit-secret/your-public-pem-certificate
+    dependsOnKey: jwtKeyOrigin1
+    dependsOnValue: text1
+    dependsOnUnfulfilledDefaultValue: your-(256|384|512)-bit-secret
+    
+  - propertyName: jwksUrl1
+    name: JWKS Url-1
+    description: |
+      The Url to the JWKS server_ 1 that contains the public keys for the signature validation.
+      Ignore this field if the JWT Signing Method was set to None.
+    type: string
+    optional: false
+    defaultValue: http://your-jwks-service.example:80/base/path 
+    dependsOnKey: jwtKeyOrigin1
+    dependsOnValue: jwks1
+    dependsOnUnfulfilledDefaultValue: http://your-jwks-service.example:80/base/path
+
+  - propertyName: jwksServiceTimeToLive1
+    name: JWKS Caching TTL-1 (minutes)
+    description: |
+      The amount of time, in minutes, that the JWKS-1 will be considered valid. Once the JWKS has expired,
+      it will have to be retrieved again. Default value is 1 hour.
+      Ignore this field if the JWT Signing Method was set to None.
+    type: int
+    optional: true
+    defaultValue: 60
+    minimumValue: 0
+    maximumValue: 2147483647
+    dependsOnKey: jwtKeyOrigin1
+    dependsOnValue: jwks1
+    dependsOnUnfulfilledDefaultValue: 60
+    
+  - propertyName: jwksConnTime1
+    name: JWKS Service connection timeout-1 (milliseconds)
+    description: |
+      Timeout specification, in milliseconds, when reaching the JWKS service. Default value is 10 seconds.
+    type: int
+    optional: true
+    defaultValue: 10000
+    minimumValue: 0
+    maximumValue: 2147483647
+    dependsOnKey: jwtKeyOrigin1
+    dependsOnValue: jwks1
+    dependsOnUnfulfilledDefaultValue: 60
+ 
+  - propertyName : signingMethod2
+    name: JWT Signing Method-2
+    description: Specifies the method to be used by the policy to decode the JWT.
+    options:
+    - name: RSA
+      value: rsa2
+    - name: HMAC
+      value: hmac2
+    - name: None
+      value: none2
+    type: radio
+    defaultValue: rsa2
+    optional: false
+    sesnsitive: false
+    allowMultiple: false
+    
+  - propertyName : signingKeyLength2
+    name: JWT Signing Key Length-2
+    description: |
+     Specifies the length of the key to be in the signing method for HMAC, or the SHa algotithm used for RSA.
+     Ignore this filed if the JWT Signing Method was set to None.
+    options:
+    - name: 256
+      value: 2562
+    - name: 384
+      value: 3842
+    - name: 512
+      value: 5122
+    type: radio
+    defaultValue: 2562
+    optional: false
+    sesnsitive: false
+    allowMultiple: false
+
+  - propertyName : jwtKeyOrigin2
+    name: JWT Key Origin-2
+    description: |
+     Origin of the Second JWT Key.
+     The JWKS option is only supported if the JWT Signing Method was set to RSA.
+     Ignore this filed if the JWT Signing Method was set to None.
+    options:
+    - name: Text2
+      value: text2
+    - name: JWKS2
+      value: jwks2
+    type: radio
+    defaultValue: text2
+    optional: false
+    sesnsitive: false
+    allowMultiple: false  
+
+  - propertyName: textKey2
+    description: |
+       The shared secret in case the JWT Signing Method-2 is set to HMAC.
+       Include the public PEM key without -----BEGIN PUBLIC KEY----- and -----END PUBLIC KEY----- for RSA signing.
+       Ignore this field if the JWT Signing Method was set to None.
+    name: JWT Key-2
+    type: string
+    sensitive: true
+    optional: false
+    defaultValue: your-(256|384|512)-bit-secret/your-public-pem-certificate
+    dependsOnKey: jwtKeyOrigin2
+    dependsOnValue: text2
+    dependsOnUnfulfilledDefaultValue: your-(256|384|512)-bit-secret
+    
+  - propertyName: jwksUrl2
+    name: JWKS Url-2
+    description: |
+      The Url to the JWKS server_ 1 that contains the public keys for the signature validation.
+      Ignore this field if the JWT Signing Method was set to None.
+    type: string
+    optional: false
+    defaultValue: http://your-jwks-service.example:80/base/path 
+    dependsOnKey: jwtKeyOrigin2
+    dependsOnValue: jwks2
+    dependsOnUnfulfilledDefaultValue: http://your-jwks-service.example:80/base/path
+
+  - propertyName: jwksServiceTimeToLive2
+    name: JWKS Caching TTL-2 (minutes)
+    description: |
+      The amount of time, in minutes, that the JWKS-2 will be considered valid. Once the JWKS has expired,
+      it will have to be retrieved again. Default value is 1 hour.
+      Ignore this field if the JWT Signing Method was set to None.
+    type: int
+    optional: true
+    defaultValue: 60
+    minimumValue: 0
+    maximumValue: 2147483647
+    dependsOnKey: jwtKeyOrigin1
+    dependsOnValue: jwks1
+    dependsOnUnfulfilledDefaultValue: 60
+    
+  - propertyName: jwksConnTime2
+    name: JWKS Service connection timeout-2 (milliseconds)
+    description: |
+      Timeout specification, in milliseconds, when reaching the JWKS-2 service. Default value is 10 seconds.
+    type: int
+    optional: true
+    defaultValue: 10000
+    minimumValue: 0
+    maximumValue: 2147483647
+    dependsOnKey: jwtKeyOrigin2
+    dependsOnValue: jwks2
+    dependsOnUnfulfilledDefaultValue: 60
+  
+  - propertyName: skipClientIdValidation
+    name: Skip Client Id Validation
+    description: Skips client application's API contract validation.
+    type: boolean
+    optional: false
+    defaultValue: false
+    allowMultiple: false
+
+  - propertyName: clientIdExpression
+    name: Client ID Expression
+    description: Expression to obtain the Client ID from the request in order to validate it.
+    type: expression
+    optional: false
+    defaultValue: '#[vars.claimSet.client_id]'
+    allowMultiple: false
+    dependsOnKey: skipClientIdValidation
+    dependsOnValue: false
+    dependsOnUnfulfilledDefaultValue: '#[vars.claimSet.client_id]'
+    
+  - propertyName: validateAudClaim
+    name: Validate Audience Claim
+    description: The JWT will be valid only if the aud claim contains at least one audiences value defined here.
+    type: boolean
+    optional: false
+    defaultValue: false
+
+  - propertyName: mandatoryAudClaim
+    description: If a claim is marked as mandatory, and this claim is not present in the incoming JWT, the request will fail.
+    name: Audience Claim Mandatory
+    type: boolean
+    optional: false
+    defaultValue: false
+    dependsOnKey: validateAudClaim
+    dependsOnValue: true
+    dependsOnUnfulfilledDefaultValue: false
+    
+  - propertyName: supportedAudiences
+    name: Audience Claim Values
+    description: Comma separated list of supported audience values.
+    type: string
+    optional: false
+    defaultValue: aud.example.com
+    dependsOnKey: validateAudClaim
+    dependsOnValue: true
+    dependsOnUnfulfilledDefaultValue: aud.example.com
+
+  - propertyName: mandatoryExpClaim
+    name: Expiration Claim Mandatory
+    description: If a claim is marked as mandatory, and this claim is not present in the incoming JWT, the request will fail.
+    type: boolean
+    optional: false
+    defaultValue: false
+    
+  - propertyName: mandatoryNbfClaim
+    name: Not Before Claim Mandatory
+    description: If a claim is marked as mandatory, and this claim is not present in the incoming JWT, the request will fail.
+    type: boolean
+    optional: false
+    defaultValue: false
+    
+  - propertyName: validateCustomClaim
+    description: The JWT will be valid only if all DataWeave expressions defined here are valid.
+    name: Validate Custom Claim
+    type: boolean
+    optional: false
+    defaultValue: false
+    
+  - propertyName: mandatoryCustomClaims
+    name: Mandatory Custom Claim Validations
+    description: |
+     Specify the Claim Name and the literal to validate the value of a claim E.g foo : fooValue
+     If more complex validations must be made or the claim value is an array or an object, provide Claim Name and DataWeave expression to validate the value of a claim. E.g. foo : #[vars.claimSet.foo == 'fooValue']
+     If a claim is marked as mandatory and this claim is not present in the incoming jwt, the request will fail.
+    type: keyvalues
+    optional: true
+    allowMultiple: true
+    dependsOnKey: validateCustomClaim
+    dependsOnValue: true
+   
+  - propertyName: nonMandatoryCustomClaims
+    name: Non Mandatory Custom Claim Validations
+    description: |
+        Specify the Claim Name and the literal to validate the value of a claim E.g foo : fooValue
+        If more complex validations must be made or the claim value is an array or an object, provide Claim Name and DataWeave expression to validate the value of a claim. E.g. foo : #[vars.claimSet.foo == 'fooValue']
+        If a claim is marked as non-mandatory and this claim is not present in the incoming jwt, the request will not fail.
+    type: keyvalues
+    optional: true
+    allowMultiple: true
+    dependsOnKey: validateCustomClaim
+    dependsOnValue: true

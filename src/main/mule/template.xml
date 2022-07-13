@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:http-policy="http://www.mulesoft.org/schema/mule/http-policy" xmlns:http-transform="http://www.mulesoft.org/schema/mule/http-policy-transform" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+               http://www.mulesoft.org/schema/mule/http-policy http://www.mulesoft.org/schema/mule/http-policy/current/mule-http-policy.xsd
+               http://www.mulesoft.org/schema/mule/http-policy-transform http://www.mulesoft.org/schema/mule/http-policy-transform/current/mule-http-policy-transform.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+
+
+    <http-policy:proxy name="{{{policyId}}}-custom-policy">
+        <http-policy:source>
+        
+   		 {{#if jwtOrigin}}
+        	<set-variable value="{{{jwtOrigin}}}" doc:name="Set Variable" doc:id="a95e2f33-bff9-4a21-937d-0041280b1d98" variableName="jwtOrigin"/>
+		 <logger level="INFO" doc:name="jwtOrigin" doc:id="1509a34d-8719-46d3-96eb-dc87ad741fef" message="jwtOrigin {{{jwtOrigin}}} "/>
+		
+        
+		<!-- continue only if the Authorization header value has a valid format -->	
+		  
+		{{/if}}
+		
+		{{#if signingMethod1}}
+		 <set-variable value="{{{signingMethod1}}}" doc:name="Set Variable" doc:id="6eabbca8-b6cc-4106-8aa7-58babb39697a" variableName="signingMethod1"/>
+		 <logger level="INFO" doc:name="signingMethod1" doc:id="6c764736-533e-4241-a7ae-97e87fbd081e" message="signingMethod1 {{{signingMethod1}}} "/>
+		{{/if}}
+		
+		{{#if signingKeyLength1}}
+		 <set-variable value="{{{this.signingKeyLength1}}}" doc:name="Set Variable" doc:id="9cb198fb-5785-4329-8ef9-86bc1736f2df" variableName="signingKeyLength1"/>
+		<logger level="INFO" doc:name="signingKeyLength1" doc:id="f67b5a00-c67f-4080-8f1e-0ed51e044ea1" message="signingKeyLength1 {{{this.signingKeyLength1}}} "/>
+		{{/if}}
+		
+		
+		{{#each jwtKeyOrigin1}}
+		 <set-variable value="{{{jwtKeyOrigin1}}}" doc:name="Set Variable" doc:id="4905044e-d29c-4beb-ae22-303bd74056c5" variableName="jwtKeyOrigin1"/>
+		 <logger level="INFO" doc:name="jwtKeyOrigin1" doc:id="2ea79c29-81d7-4c69-80bb-4daf70faddfd" message="jwtKeyOrigin1 {{{jwtKeyOrigin1}}} "/>
+		
+		{{/each}}
+		
+			
+            <http-policy:execute-next/>
+
+            <http-transform:set-response statusCode="201">
+                <http-transform:body>#[ 'Hello World!' ]</http-transform:body>
+                <http-transform:headers>#[ {'New-Header': 'Hello World!'} ]</http-transform:headers>
+            </http-transform:set-response>
+
+        </http-policy:source>
+    </http-policy:proxy>
+	
+	<os:object-store name="public_keys_x5t_object_store" doc:name="Object store" doc:id="1d955154-4f0c-45c4-9289-8e36b17e5c28" entryTtl="{{{jwksServiceTimeToLive1}}}" entryTtlUnit="MINUTES" expirationInterval="{{{jwksConnTime1}}}" expirationIntervalUnit="MILLISECONDS" />
+	<ee:object-store-caching-strategy name="Caching_Strategy_1" doc:name="Caching Strategy" doc:id="249ef11c-8f4d-4568-bc28-eac5f9c4ca7b" keyGenerationExpression="#[vars.jwtHeader.x5t]" objectStore="public_keys_x5t_object_store" />
+	<flow name="templateFlow" doc:id="d0ea0359-3c12-4eb1-9390-9fee1f5570aa" >
+		<http:listener doc:name="Listener" doc:id="37bf2eab-5675-4c50-8ebf-0526b262eea9" config-ref="{{{policyId}}}-custom-policy" path="/adljf"/>
+		<flow-ref doc:name="Does Authorization Header Exists?" doc:id="4ca44005-27a1-489b-8f9c-0f8d05f77b39" name="authorization-header-violation-sub-flow"/>
+		
+		continue only if the Authorization header value has a valid format	
+		<choice doc:name="Check for Authorization or X-Authorization header" doc:id="92174cda-ec95-4ec5-b12a-1fefe06204ff" >
+			<when expression="#[!isEmpty(attributes.headers.authorization)]">
+				<logger level="INFO" doc:name="Auth Header Present" doc:id="23931291-923e-4570-bdc9-a4cc8349e2c9" message="Authrization Header Present"/>
+						<flow-ref doc:name="Does Authorization Header contain Bearer?" doc:id="d9937226-1305-4c53-94b0-4e29e10edbb2" name="auth-format-violation-sub-flow"/>
+				<ee:transform doc:name="Store JWT Token and Payload" doc:id="db3811c6-11b5-4291-a13d-0750fb388179" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import substringAfter from dw::core::Strings
+output application/json
+---
+substringAfter(attributes.headers.authorization,"Bearer ")]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="payloadBck" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="Does X-Authorization Header contain Bearer?" doc:id="06e1f2f1-fe87-40b8-b7a9-cbc6212d7413" name="auth-format-violation-sub-flow" />
+				<ee:transform doc:name="Store JWT Token and Payload" doc:id="c2a910e3-bb85-4fc1-b929-5fbcc6204f88" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+import substringAfter from dw::core::Strings
+output application/json
+---
+substringAfter(attributes.headers.'x-authorization',"Bearer ")]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="payloadBck" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<set-variable value="#[payload splitBy ('.')]" doc:name="jwtParts" doc:id="a25598dc-2cad-46be-874f-89f20465ec15" variableName="jwtParts"/>
+		<choice doc:name="JWT Format Filter" doc:id="2c0618b2-ce7c-4771-bb80-670742149752" >
+			<when expression="#[sizeOf(vars.jwtParts) != 3]">
+				<flow-ref doc:name="auth-format-violation" doc:id="c2d63db0-730d-4ae1-8f4d-80632fe8ca0e" name="auth-format-violation-sub-flow" />
+			</when>
+		</choice>
+		<ee:transform doc:name="set JWT Header, Payload and Signature Var" doc:id="e75efbb4-931a-4a3b-a68b-2f1d88ed4a32" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="jwtHeader" ><![CDATA[%dw 2.0
+import fromBase64 from dw::core::Binaries
+output application/json
+var header = vars.jwtParts[0]
+---
+read(fromBase64(header default ""))]]></ee:set-variable>
+				<ee:set-variable variableName="jwtPayload" ><![CDATA[%dw 2.0
+import fromBase64 from dw::core::Binaries
+output application/json
+var body = vars.jwtParts[1]
+---
+read(fromBase64(body default ""))]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Check Expiry" doc:id="b141d2a7-932f-4a09-9907-470ddcf9eaf5" name="expiry-violation-sub-flow"/>
+		<set-variable value="{{{this.signingMethod1}}}" doc:name="signingMethod1" doc:id="fa19f342-d5eb-4f54-859f-701eb29cbfce" variableName="signingMethod1"/>
+		<choice doc:name="Check Signing Method" doc:id="5483e844-9af7-438f-9e39-c92f8037624d" >
+			<when expression="#[vars.signingMethod1 != 'none']">
+				<set-variable value="{{{this.signingKeyLength1}}}" doc:name="signingKeyLength1" doc:id="5d8ec451-d82e-4e27-bdd8-ea6bd9ef072d" variableName="signingKeyLength1" />
+				<set-variable value="{{{this.jwtKeyOrigin1}}}" doc:name="jwtKeyOrigin1" doc:id="e21f3e18-c254-4e4b-b4a2-be7889689a12" variableName="jwtKeyOrigin1" />
+				<set-variable value="{{{this.textKey1}}}" doc:name="textKey1" doc:id="9d6d57e4-8538-430c-998d-41abe887a345" variableName="textKey1"/>
+				<set-variable value="{{{this.jwksUrl1}}}" doc:name="jwksUrl1" doc:id="a49ab11f-9657-442c-a5de-34c2fa67063d" variableName="jwksUrl1" />
+			</when>
+		</choice>
+		<flow-ref doc:name="verify-jwt-sub-flow" doc:id="033fca02-d017-462c-8824-847201a2572a" target="public_key_or_cert" name="verify-jwt-sub-flow"/>
+		<flow-ref doc:name="check-signature-sub-flow" doc:id="d2010d4d-ff2a-4f34-a472-5d99ae7b1c6e" name="check-signature-sub-flow"/>
+		
+	</flow>
+	
+	 <sub-flow name="authorization-header-violation-sub-flow" doc:id="b07a66b7-be57-4a7f-8516-bc1e35527c92" >
+		<try doc:name="Try" doc:id="8ca9bbc8-7248-4cbc-8858-577481ba3357" >
+			<validation:is-true doc:name="Is authorization header present" doc:id="cd6f8025-e6bb-43b9-b03a-5491edc8ba9e" expression="#[isEmpty(attributes.headers.authorization) or isEmpty(attributes.headers.'x-authorization')]" message='{ "error" : "Authorization header not provided" }' />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="88a84e3e-c143-47ad-80b1-d3448d45e4c9" type="ANY">
+					 <logger message='Policy {{ policyId }} filtered the message #[message.getId()] based on authorization header format check violation' level="ERROR" doc:name="authFormatViolation"/>
+					<ee:transform doc:name="Error Payload" doc:id="056799fc-1094-4cd7-91ad-2a0eb0fee608" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": "Authorization header not provided."
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="http" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	status: 401
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>	
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		</sub-flow>
+	    
+	
+	<sub-flow name="auth-format-violation-sub-flow" doc:id="ad4e96a4-3b59-4c6d-b070-e13eafaae7f0" >
+		<try doc:name="Try" doc:id="52f09900-cb9c-4f14-917e-13c5720660b4" >
+			<validation:is-true doc:name="Authorization Format Filter" doc:id="0046b86a-c08c-41cb-adf0-e239a48c5534" expression="#[(payload.attributes.headers.authorization default &quot;&quot; startsWith('Bearer ')) or (payload.attributes.headers.'x-authorization' default &quot;&quot; startsWith('Bearer '))]" message='{ "error" : "Authorization header has invalid format" }' />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6b3ea3f4-a027-46c1-b918-d09b52f84b7f" type="ANY">
+					 <logger message='Policy {{ policyId }} filtered the message #[correlationId default ""] based on authorization header format check violation.' level="ERROR" doc:name="authFormatViolation"/>
+					<ee:transform doc:name="Error Payload" doc:id="f3412bfc-6e59-49c2-a4e7-b3613bc27636" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": "Authorization header has invalid format"
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="http" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	status: 401
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>	
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		</sub-flow>
+	 
+	<sub-flow name="expiry-violation-sub-flow" doc:id="f6b9eca4-a349-48e6-99f3-cef9694ec210" >
+		<try doc:name="Try" doc:id="d44a49fc-6d77-43c4-b028-30466cd12c92" >
+			<validation:is-true doc:name="Expirance Filter" doc:id="8abcd6a3-0bf6-429f-bca9-e190e3b8bb25" expression="#[jwtPayload.exp &gt; now() as Number]" message='{ "error" : "JWT has expired" }' />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7c87e847-2081-4847-8c30-a79fb94c9fcf" type="ANY">
+					 <logger message='Policy {{ policyId }} filtered the message #[correlationId default ""] based on expiry check violation,' level="ERROR" doc:name="expiryViolation"/>
+					<ee:transform doc:name="Error Payload" doc:id="3eea9177-72fb-482a-9c36-904f3dc93ae6" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": "JWT has expired."
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="http" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	status: 401
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>	
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		</sub-flow>
+	  
+	  
+	       <sub-flow name="auth-format-violation-copy-sub-flow" doc:id="ec6df26f-4004-490d-a4db-bf85457bea11" >
+		<try doc:name="Try" doc:id="2755a63b-5d77-4bca-9484-676b464f145e" >
+			<validation:is-true doc:name="Is authorization true" doc:id="1baf651a-d19e-47e0-b783-a00768327761" expression="#[(payload.attributes.headers.authorization default &quot;&quot; startsWith('Bearer ')) or (payload.attributes.headers.'x-authorization' default &quot;&quot; startsWith('Bearer '))]" message='{ "error" : "Authorization header has invalid format" }' />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="de303dfc-a685-4b7e-9240-be05f33b34d8" type="ANY">
+					 <logger message='Policy {{ policyId }} filtered the message #[correlationId default ""] based on authorization header format check violation.' level="ERROR" doc:name="authFormatViolation"/>
+					<ee:transform doc:name="Error Payload" doc:id="c83b3ca1-06c1-4c2f-9f20-35b91f59fe0d" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": "Authorization header has invalid format"
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="http" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	status: 401
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>	
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		</sub-flow>
+	<sub-flow name="verify-jwt-sub-flow" doc:id="456c7bf6-8e8d-4589-b95e-1e2b7affd2e9" >
+		<choice doc:name="get public key from config or JWKS" doc:id="2e6dfdd0-ef5b-4d71-9ea2-73cdb445a452" >
+			<when expression='#[vars.jwtKeyOrigin1=="jwksUrl1"  and !isEmpty(jwksUrl1)]'>
+				<ee:cache doc:name="Cache" doc:id="7a64126c-e51f-4233-9c2e-4b566796e4b8" cachingStrategy-ref="Caching_Strategy_1">
+					<logger level="INFO" doc:name="cache miss" doc:id="df33ae13-f2c5-48fe-902a-0607c13b5fbc" message="cache miss"/>
+					<http:request method="GET" doc:name="Jwks Request" doc:id="5ecfdba6-bc3c-4992-ad71-164b63c32287" url="#[vars.jwksUrl1]"/>
+					<ee:transform doc:name="Set Payload" doc:id="bbb4e5bf-03f6-415f-a18f-ab8441ab0308" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+"-----BEGIN CERTIFICATE-----\n" ++ (((payload.keys filter ($.kid == header.kid)).x5c[0][0]) default "" )++ "\n-----END CERTIFICATE-----"]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</ee:cache>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Use secret from config" doc:id="688d295f-a453-4e8b-a282-4a232a4e89dc" >
+					<ee:message >
+						<ee:set-payload ><![CDATA["-----BEGIN CERTIFICATE-----\n"  ++ {{{textKey1}}} ++ "\n-----END CERTIFICATE-----"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="check-signature-sub-flow" doc:id="d5dc0cc1-7256-48df-957c-cf8d5e8116f1" >
+		<choice doc:name="Check Signature" doc:id="2fe2f70b-aa7a-4adb-8fb3-6b2375399fd9" >
+			<when expression='#[vars.public_key_or_cert default "" startsWith("-")]'>
+				<logger level="INFO" doc:name="Verify Public Cert" doc:id="c7b8e1ea-c0e6-4451-a7c7-7033497b543d" message="Verify Public Cert"/>
+				<scripting:execute doc:name="Execute" doc:id="250172fb-3f88-482c-a94f-05fdaf54e232" engine="Groovy">
+					<scripting:code><![CDATA[import org.apache.commons.codec.binary.Base64;
+			import javax.crypto.Cipher;
+			import java.security.*;
+			import java.security.spec.*;
+			import java.io.InputStream;
+			import java.security.cert.*;
+			
+			
+			String algorithm;
+			
+			
+			//identify algorithm		
+			switch (flowVars.jwtHeader.alg) {
+				case "RS256":
+					algorithm = "SHA256withRSA";
+					break;
+							
+				case "RS384":
+					algorithm = "SHA384withRSA";
+					break;
+							
+				case "RS512":
+					algorithm = "SHA512withRSA";
+					break;												
+			}
+			
+			//verified flag set			
+			boolean verified = false;
+			
+			try{
+				CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+					
+				X509Certificate publicCertificate = (X509Certificate)certFactory.generateCertificate(new ByteArrayInputStream(flowVars.public_key_or_cert.getBytes()));
+			    Signature publicSignature = Signature.getInstance(algorithm);
+        		publicSignature.initVerify(publicCertificate);
+        		publicSignature.update((flowVars['jwtParts'][0] + '.' + flowVars['jwtParts'][1]).getBytes());
+				Base64 base64 = new Base64(true);
+        		byte[] signatureBytes = base64.decode(flowVars['jwtParts'][2].getBytes("UTF-8"));
+
+        		verified = publicSignature.verify(signatureBytes);		
+        					
+			}
+			catch (Exception e){
+				org.apache.logging.log4j.LogManager.getLogger(org.mule.api.processor.LoggerMessageProcessor.class).debug("Policy {{ policyId }}: JWT signature could not be verified: " + e);				
+				verified = false;
+			}
+			
+			payload = verified;]]></scripting:code>
+				</scripting:execute>
+				<set-variable value="#[payload]" doc:name="isValidSignature" doc:id="059b2581-853f-42c2-9e5c-b419782da109" variableName="isValidSignature"/>
+			</when>
+			<when expression='#[(vars.jwtHeader.alg == "RS256") or (vars.jwtHeader.alg == "RS384") or (vars.jwtHeader.alg == "RS512")]'>
+				<logger level="INFO" doc:name="Verify RSA Signature" doc:id="c6043f1d-c99c-4c02-84f7-92ae1604956a" message="Verify RSA Signature" />
+				<scripting:execute engine="Groovy" doc:name="Copy_of_Execute" doc:id="5b45a0fc-c091-46dc-8c25-2295de356321" >
+					<scripting:code ><![CDATA[import org.apache.commons.codec.binary.Base64;
+			import javax.crypto.Cipher;
+			import java.security.*;
+			import java.security.spec.*;
+			
+			String algorithm;
+					
+			switch (flowVars.jwtHeader.alg) {
+				case "RS256":
+					algorithm = "SHA256withRSA";
+					break;
+							
+				case "RS384":
+					algorithm = "SHA384withRSA";
+					break;
+							
+				case "RS512":
+					algorithm = "SHA512withRSA";
+					break;												
+			}			
+			boolean verified = false;
+			
+			try{					
+				byte[] pk = Base64.decodeBase64(flowVars.public_key_or_cert);
+				X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(pk); 
+				KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+				PublicKey publicKey = keyFactory.generatePublic(pubKeySpec);		
+				Signature signature = Signature.getInstance(algorithm);				
+				signature.initVerify(publicKey);				
+				signature.update((flowVars['jwtParts'][0] + '.' + flowVars['jwtParts'][1]).getBytes());											
+				Base64 base64 = new Base64(true);
+				verified = signature.verify(base64.decode(flowVars['jwtParts'][2].getBytes("UTF-8")));						
+			}
+			catch (Exception e){
+				org.apache.logging.log4j.LogManager.getLogger(org.mule.api.processor.LoggerMessageProcessor.class).debug("Policy {{ policyId }}: JWT signature could not be verified: " + e);				
+				verified = false;
+			}
+			
+			payload = verified;]]></scripting:code>
+				</scripting:execute>
+				<set-variable value="#[payload]" doc:name="isValidSignature" doc:id="46ac67b9-4d66-44de-aac2-5dffa0912a42" variableName="isValidSignature"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Verify HSA Signature" doc:id="63371d58-a4fc-4ae0-bddf-b69fe1a60cdd" message="Verify RSA Signature" />
+				<scripting:execute engine="Groovy" doc:name="Copy_of_Copy_of_Execute" doc:id="e2e82717-46b2-42e4-a372-4ab3be65db71" >
+					<scripting:code ><![CDATA[import javax.crypto.Mac;
+					import javax.crypto.spec.SecretKeySpec;
+					import org.apache.commons.codec.binary.Base64;
+					
+					String algorithm;
+					
+					switch (flowVars.jwtHeader.alg) {
+						case "HS256":
+							algorithm = "HmacSHA256";
+							break;
+							
+						case "HS384":
+							algorithm = "HmacSHA384";
+							break;
+							
+						case "HS512":
+							algorithm = "HmacSHA512";
+							break;	
+							
+						default:
+							algorithm = null;
+					}
+					if (algorithm != null){
+						Mac sha256_HMAC = Mac.getInstance(algorithm);
+						SecretKeySpec secret_key = new SecretKeySpec(flowVars.public_key_or_cert.getBytes(), algorithm);
+						sha256_HMAC.init(secret_key);
+						
+						byte[] signature = sha256_HMAC.doFinal((flowVars['jwtParts'][0] + '.' + flowVars['jwtParts'][1]).getBytes("US-ASCII"));
+						flowVars['signature'] = Base64.encodeBase64URLSafeString(signature);
+					}
+					else{
+						org.apache.logging.log4j.LogManager.getLogger(org.mule.api.processor.LoggerMessageProcessor.class).debug("Policy {{ policyId }}: JWT signature could not be verified: No known algorithm: " + flowVars.jwtHeader.alg);				
+						flowVars['signature'] = ' ';
+					}]]></scripting:code>
+				</scripting:execute>
+				<set-variable value="#[[vars.signature] == ['jwtParts'[2])]]" doc:name="isValidSignature" doc:id="ebd36e05-99d1-40ce-b44f-1ed46e28e41e" variableName="isValidSignature"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+        
+       
+	
+	
+	
+</mule>
