@@ -10,7 +10,8 @@ Please note Maven archetype is currently unavailable in a Public Maven Central R
 
 C) Add the Profile Given below side to Settings.xml
 
-`<!-- Profile for Custom Policy Archetype -->
+```
+<!-- Profile for Custom Policy Archetype -->
 <profiles>
 	<profile>
 		<id>archetype-repository</id>
@@ -30,21 +31,25 @@ C) Add the Profile Given below side to Settings.xml
 			</repository>
 		</repositories>
 	</profile>
-</profiles>`
+</profiles>
+```
 
 D) Additional Server and Mule Repo Configurations for Build and Deploy phase :   
  1) You need to add your Anypoint platform credentials as well to your settings.xml. Make sure you replace ${username} and ${password} with actual credentials 
-   ` <!– Step D1 Server Profile -->
+   ```
+   <!– Step D1 Server Profile -->
     <servers>
       <server>
         <id>exchange-server</id>
         <username>${username}</username>
         <password>${password}</password>
       </server>
-    </servers>`
+    </servers>
+   ``` 
 
  2) One more Private Mule Repository Profile you need to add to your settings.xml.
-   `<!- Step D2 Mule Private Repo Profile -->
+   ```
+   <!- Step D2 Mule Private Repo Profile -->
     <profile>
       <id>Mule</id>
       <activation>
@@ -64,4 +69,5 @@ D) Additional Server and Mule Repo Configurations for Build and Deploy phase :
           </snapshots>
         </repository>
       </repositories>
-    </profile> `
+    </profile> 
+    ```
